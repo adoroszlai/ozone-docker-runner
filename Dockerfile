@@ -93,11 +93,6 @@ COPY --from=go /go/bin/csc /usr/bin/csc
 #COPY --from=builder /ldb /usr/local/bin/ldb
 #COPY --from=builder /usr/local/lib /usr/local/lib/
 
-#For executing inline smoketest
-RUN set -eux ; \
-    pip3 install awscli robotframework boto3 ; \
-    rm -r ~/.cache/pip
-
 #dumb init for proper init handling
 RUN set -eux ; \
     ARCH="$(arch)"; \
@@ -134,6 +129,11 @@ RUN set -eux ; \
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV PATH=/opt/hadoop/libexec:$PATH:/opt/hadoop/bin
+
+#For executing inline smoketest
+RUN set -eux ; \
+    pip3 install awscli robotframework==6.1.1 boto3 ; \
+    rm -r ~/.cache/pip
 
 RUN id=1000; \
     for u in hadoop om dn scm s3g recon testuser testuser2 httpfs; do \
