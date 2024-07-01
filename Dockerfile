@@ -89,10 +89,6 @@ RUN apt update -q \
       zlib1g \
     && apt clean
 
-# Robot Framework for testing
-RUN pip install robotframework \
-    && rm -fr ~/.cache/pip
-
 COPY --from=go /go/bin/csc /usr/bin/csc
 #COPY --from=builder /ldb /usr/local/bin/ldb
 #COPY --from=builder /usr/local/lib /usr/local/lib/
