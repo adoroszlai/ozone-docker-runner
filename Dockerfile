@@ -32,69 +32,70 @@ RUN set -eux ; \
         exit 1 ; \
     fi
 
-FROM centos:7.9.2009 AS builder
-# Required for cmake3 and gcc 10
-RUN yum -y install epel-release centos-release-scl
-RUN set -eux ; \
-    yum -y install \
-      cmake3 \
-      devtoolset-10-gcc-c++ \
-      make \
-      perl \
-      which \
-    && yum clean all
-RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
-# Add gcc 10 bin path
-ENV PATH=/opt/rh/devtoolset-10/root/usr/bin:$PATH
-RUN export GFLAGS_VER=2.2.2 \
-      && curl -LSs https://github.com/gflags/gflags/archive/v${GFLAGS_VER}.tar.gz | tar zxv \
-      && cd gflags-${GFLAGS_VER} \
-      && mkdir build \
-      && cd build \
-      && cmake .. \
-      && make -j$(nproc) \
-      && make install \
-      && cd ../.. \
-      && rm -r gflags-${GFLAGS_VER}
-RUN export ZSTD_VER=1.5.2 \
-      && curl -LSs https://github.com/facebook/zstd/archive/v${ZSTD_VER}.tar.gz | tar zxv \
-      && cd zstd-${ZSTD_VER} \
-      && make -j$(nproc) \
-      && make install \
-      && cd .. \
-      && rm -r zstd-${ZSTD_VER}
-RUN export ROCKSDB_VER=7.7.3 \
-      && curl -LSs https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VER}.tar.gz | tar zxv \
-      && mv rocksdb-${ROCKSDB_VER} rocksdb \
-      && cd rocksdb \
-      && make -j$(nproc) ldb \
-      && mv ldb .. \
-      && cd .. \
-      && rm -r rocksdb
+# FIXME compilation of ldb is failing due to:
+# db/db_impl/db_impl.cc: In member function 'virtual rocksdb::Status rocksdb::DBImpl::FlushWAL(bool)':
+# db/db_impl/db_impl.cc:1441:23: error: redundant move in return statement [-Werror=redundant-move]
+#  1441 |       return std::move(io_s);
+#       |              ~~~~~~~~~^~~~~~
+# db/db_impl/db_impl.cc:1441:23: note: remove 'std::move' call
+# db/db_impl/db_impl.cc:1445:23: error: redundant move in return statement [-Werror=redundant-move]
+#  1445 |       return std::move(io_s);
+#       |              ~~~~~~~~~^~~~~~
+# db/db_impl/db_impl.cc:1445:23: note: remove 'std::move' call
+# db/db_impl/db_impl.cc: In member function 'virtual rocksdb::Status rocksdb::DBImpl::LockWAL()':
+# db/db_impl/db_impl.cc:1562:19: error: redundant move in return statement [-Werror=redundant-move]
+#  1562 |   return std::move(status);
+#       |          ~~~~~~~~~^~~~~~~~
+#FROM buildpack-deps:24.04
+#RUN apt update -q \
+#    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+#      libbz2-dev \
+#      libgflags-dev \
+#      liblz4-dev \
+#      libsnappy-dev \
+#      libzstd-dev \
+#      zlib1g-dev \
+#    && apt clean
+#
+#ARG ROCKSDB_VER=7.7.3
+#ARG ROCKSDB_URL=https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VER}.tar.gz
+#RUN curl -LSs ${ROCKSDB_URL} | tar zxv \
+#      && mv rocksdb-${ROCKSDB_VER} rocksdb \
+#      && cd rocksdb \
+#      && make ldb \
+#      && mv ldb .. \
+#      && cd .. \
+#      && rm -r rocksdb
 
-FROM centos:7.9.2009
-RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN set -eux ; \
-    yum install -y \
+FROM eclipse-temurin:17-jammy
+RUN apt update -q \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
       bzip2 \
       diffutils \
       fuse \
       jq \
-      krb5-workstation \
+      krb5-user \
+      libbz2-1.0 \
+      liblz4-1 \
+      libsnappy1v5 \
+      libzstd1 \
       lsof \
+      ncat \
       net-tools \
-      nmap-ncat \
       openssl \
-      python3 python3-pip \
-      snappy \
+      python3-pip \
+      python-is-python3 \
       sudo \
-      zlib \
-    && yum clean all
-RUN sudo python3 -m pip install --upgrade pip
+      zlib1g \
+    && apt clean
+
+# Robot Framework for testing
+RUN pip install robotframework \
+    && rm -fr ~/.cache/pip
 
 COPY --from=go /go/bin/csc /usr/bin/csc
-COPY --from=builder /ldb /usr/local/bin/ldb
-COPY --from=builder /usr/local/lib /usr/local/lib/
+#COPY --from=builder /ldb /usr/local/bin/ldb
+#COPY --from=builder /usr/local/lib /usr/local/lib/
 
 #For executing inline smoketest
 RUN set -eux ; \
@@ -135,67 +136,47 @@ RUN set -eux ; \
     curl -L ${url} | tar xvz ; \
     mv async-profiler-* /opt/profiler
 
-# OpenJDK 17
-RUN set -eux ; \
-    ARCH="$(arch)"; \
-    case "${ARCH}" in \
-        x86_64) \
-            url='https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz'; \
-            sha256='0022753d0cceecacdd3a795dd4cea2bd7ffdf9dc06e22ffd1be98411742fbb44'; \
-            ;; \
-        aarch64) \
-            url='https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-aarch64_bin.tar.gz'; \
-            sha256='13bfd976acf8803f862e82c7113fb0e9311ca5458b1decaef8a09ffd91119fa4'; \
-            ;; \
-        *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
-    esac && \
-    curl -L ${url} -o openjdk.tar.gz && \
-    echo "${sha256} *openjdk.tar.gz" | sha256sum -c - && \
-    tar xzvf openjdk.tar.gz -C /usr/local && \
-    rm -f openjdk.tar.gz
-
-ENV JAVA_HOME=/usr/local/jdk-17.0.2
 ENV LD_LIBRARY_PATH=/usr/local/lib
-ENV PATH=/opt/hadoop/libexec:$PATH:$JAVA_HOME/bin:/opt/hadoop/bin
+ENV PATH=/opt/hadoop/libexec:$PATH:/opt/hadoop/bin
 
 RUN groupadd --gid 1000 hadoop
 RUN useradd --uid 1000 hadoop --gid 1000 --home /opt/hadoop
-RUN chmod 755 /opt/hadoop
+RUN mkdir /opt/hadoop && chmod 755 /opt/hadoop
 RUN echo "hadoop ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 RUN chown hadoop /opt
 
 RUN groupadd --gid 1001 om
 RUN useradd --uid 1001 om --gid 1001 --home /opt/om
-RUN chmod 755 /opt/om
+RUN mkdir /opt/om && chmod 755 /opt/om
 
 RUN groupadd --gid 1002 dn
 RUN useradd --uid 1002 dn --gid 1002 --home /opt/dn
-RUN chmod 755 /opt/dn
+RUN mkdir /opt/dn && chmod 755 /opt/dn
 
 RUN groupadd --gid 1003 scm
 RUN useradd --uid 1003 scm --gid 1003 --home /opt/scm
-RUN chmod 755 /opt/scm
+RUN mkdir /opt/scm && chmod 755 /opt/scm
 
 RUN groupadd --gid 1004 s3g
 RUN useradd --uid 1004 s3g --gid 1004 --home /opt/s3g
-RUN chmod 755 /opt/s3g
+RUN mkdir /opt/s3g && chmod 755 /opt/s3g
 
 RUN groupadd --gid 1006 recon
 RUN useradd --uid 1006 recon --gid 1006 --home /opt/recon
-RUN chmod 755 /opt/recon
+RUN mkdir /opt/recon && chmod 755 /opt/recon
 
 RUN groupadd --gid 1007 testuser
 RUN useradd --uid 1007 testuser --gid 1007 --home /opt/testuser
-RUN chmod 755 /opt/testuser
+RUN mkdir /opt/testuser && chmod 755 /opt/testuser
 
 RUN groupadd --gid 1008 testuser2
 RUN useradd --uid 1008 testuser2 --gid 1008 --home /opt/testuser2
-RUN chmod 755 /opt/testuser2
+RUN mkdir /opt/testuser2 && chmod 755 /opt/testuser2
 
 RUN groupadd --gid 1009 httpfs
 RUN useradd --uid 1009 httpfs --gid 1009 --home /opt/httpfs
-RUN chmod 755 /opt/httpfs
+RUN mkdir /opt/httpfs && chmod 755 /opt/httpfs
 
 # Prep for Kerberized cluster
 RUN mkdir -p /etc/security/keytabs && chmod -R a+wr /etc/security/keytabs 
