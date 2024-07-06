@@ -81,7 +81,7 @@ jobs:
           name: ozone-bin
       - name: Untar binaries
         run: |
-          tar xzvf --strip-components=1 ozone*.tar.gz
+          tar -xvz --strip-components 1 -f ozone*.tar.gz
           rm ozone*.tar.gz
       - name: Download runner image
         uses: actions/download-artifact@v4
