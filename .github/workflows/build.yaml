@@ -17,7 +17,8 @@ on:
   - push
   - pull_request
 env:
-  OZONE_RUNNER_IMAGE: ${{ github.repository }}:${{ github.run_number }}
+  OZONE_RUNNER_IMAGE: ${{ github.repository }}
+  OZONE_RUNNER_VERSION: ${{ github.run_number }}
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -25,9 +26,9 @@ jobs:
       - name: checkout source
         uses: actions/checkout@v4
       - name: build image
-        run: DOCKER_BUILDKIT=1 docker build -t "$OZONE_RUNNER_IMAGE" .
+        run: DOCKER_BUILDKIT=1 docker build -t "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION" .
       - name: save image
-        run: docker image save -o image.tar "$OZONE_RUNNER_IMAGE"
+        run: docker image save -o image.tar "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
       - name: upload image as artifact
         uses: actions/upload-artifact@v4
         with:
