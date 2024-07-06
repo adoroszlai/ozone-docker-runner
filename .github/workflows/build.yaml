@@ -43,9 +43,9 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
         with:
-          # change to apache/ozone and master after HDDS-11096 is fixed
+          # change to apache/ozone and master after all items required for HDDS-11091 are fixed
           repository: adoroszlai/ozone
-          ref: HDDS-11096
+          ref: HDDS-11091-test
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -94,8 +94,8 @@ jobs:
           rm image.tar
       - name: Execute tests
         run: |
-          ./test-all.sh
-        working-directory: compose
+          mkdir .aws && chmod 777 .aws && sudo chown $OZONE_VOLUME_OWNER .aws
+          cd compose && ./test-all.sh
         env:
           OZONE_ACCEPTANCE_SUITE: ${{ matrix.suite }}
           OZONE_VOLUME_OWNER: 1000
