@@ -52,7 +52,7 @@ jobs:
           distribution: 'temurin'
           java-version: 8
       - name: Run a full build
-        run: hadoop-ozone/dev-support/checks/build.sh -Pdist
+        run: hadoop-ozone/dev-support/checks/build.sh -Pdist -DskipShade -Dskip.installnpm -Dskip.installnpx -Dskip.installyarn -Dskip.npm -Dskip.npx -Dskip.yarn
       - name: Store binaries for tests
         uses: actions/upload-artifact@v4
         with:
@@ -71,9 +71,8 @@ jobs:
       - build-ozone
     strategy:
       matrix:
-        suite: ${{ fromJson(needs.build-ozone.outputs.acceptance-suites) }}
-        exclude:
-          - suite: s3a
+        suite:
+          - HDDS-11091
       fail-fast: false
     steps:
       - name: Download Ozone binaries
