@@ -57,7 +57,9 @@ jobs:
     strategy:
       matrix:
         suite:
-          - HA-unsecure # can add more later
+          - HA-secure
+          - HA-unsecure
+          - secure
       fail-fast: false
     steps:
       - name: Download Ozone ${{ env.OZONE_VERSION }}
