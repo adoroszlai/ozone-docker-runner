@@ -17,35 +17,40 @@ on:
   - push
   - pull_request
 env:
+  OZONE_RUNNER_IMAGE: ${{ github.repository }}
+  OZONE_RUNNER_VERSION: ${{ github.run_number }}
   OZONE_VERSION: 1.4.0
-  # TEMP validate tests with existing image
-  OZONE_RUNNER_IMAGE: apache/ozone-runner # ${{ github.repository }}
-  OZONE_RUNNER_VERSION: 20240316-jdk17-1 # ${{ github.run_number }}
 jobs:
-#  build:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: checkout source
-#        uses: actions/checkout@v4
-#      - name: build image
-#        run: DOCKER_BUILDKIT=1 docker build -t "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION" .
-#      - name: save image
-#        run: docker image save -o image.tar "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
-#      - name: upload image as artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: image
-#          path: image.tar
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Build image
+        run: |
+          tag=apache/ozone-runner:20240316-jdk17-1
+          DOCKER_BUILDKIT=1 docker build -t $tag . || docker image pull $tag # temporary hack until build is fixed
+          docker image tag $tag "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
+          docker image ls
+      - name: Save image as tarball
+        run: |
+          docker image save -o image.tar "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
+          ls -lh image.tar
+      - name: Upload image for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: image
+          path: image.tar
   acceptance:
     runs-on: ubuntu-20.04
-#    needs: build
+    needs: build-image
     strategy:
       matrix:
         suite:
-          - HA-secure # can add more later
+          - HA-unsecure # can add more later
       fail-fast: false
     steps:
-      - name: Download Ozone ${OZONE_VERSION}
+      - name: Download Ozone $OZONE_VERSION
         run: |
           curl -LSs -o ozone-src.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}-src.tar.gz
           curl -LSs -o ozone.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}.tar.gz
@@ -54,16 +59,16 @@ jobs:
           tar -xvz -C hadoop-ozone/dist/target -f ozone.tar.gz
           sudo chmod -R a+rwX hadoop-ozone/dist/target
           rm -f ozone.tar.gz ozone-src.tar.gz
-#      - name: Download image
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: image
-#      - name: Load image
-#        run: |
-#          docker image load -i image.tar
-#          rm image.tar
-      - name: TEMP pull image
-        run: docker image pull "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
+      - name: Download image
+        uses: actions/download-artifact@v4
+        with:
+          name: image
+      - name: Load image
+        run: |
+          ls -lh image.tar
+          docker image load -i image.tar
+          docker image ls
+          rm -f image.tar
       - name: Execute tests
         run: |
           pushd hadoop-ozone/dist/target/ozone-*
