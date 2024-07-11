@@ -14,12 +14,17 @@
 # limitations under the License.
 name: CI
 on:
-  - push
-  - pull_request
+  push:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
 env:
-  OZONE_RUNNER_IMAGE: ${{ github.repository }}
-  OZONE_RUNNER_VERSION: ${{ github.run_number }}
+  OZONE_RUNNER_IMAGE: ${{ github.repository_owner }}/ozone-runner
+  OZONE_RUNNER_VERSION: ci-${{ github.run_number }}
   OZONE_VERSION: 1.4.0
+  # Test push only in forks;
+  # after push in apache, the image should be tested with complete Ozone CI.
+  # This condition is duplicated in 'acceptance' job's 'if' condition (cannot use env context there).
+  NEEDS_TEST: ${{ github.repository_owner != 'apache' || github.event_name == 'pull_request' }}
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -33,16 +38,19 @@ jobs:
           docker image tag $tag "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
           docker image ls
       - name: Save image as tarball
+        if: ${{ env.NEEDS_TEST }}
         run: |
           docker image save -o image.tar "$OZONE_RUNNER_IMAGE":"$OZONE_RUNNER_VERSION"
           ls -lh image.tar
       - name: Upload image for testing
         uses: actions/upload-artifact@v4
+        if: ${{ env.NEEDS_TEST }}
         with:
           name: image
           path: image.tar
   acceptance:
     runs-on: ubuntu-20.04
+    if: ${{ github.repository_owner != 'apache' || github.event_name == 'pull_request' }}
     needs: build-image
     strategy:
       matrix:
@@ -50,7 +58,7 @@ jobs:
           - HA-unsecure # can add more later
       fail-fast: false
     steps:
-      - name: Download Ozone $OZONE_VERSION
+      - name: Download Ozone ${{ env.OZONE_VERSION }}
         run: |
           curl -LSs -o ozone-src.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}-src.tar.gz
           curl -LSs -o ozone.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}.tar.gz
