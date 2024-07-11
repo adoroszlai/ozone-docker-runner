@@ -17,8 +17,7 @@ on:
   - push
   - pull_request
 env:
-  OZONE_BIN_URL: https://dlcdn.apache.org/ozone/1.4.0/ozone-1.4.0.tar.gz
-  OZONE_SRC_URL: https://dlcdn.apache.org/ozone/1.4.0/ozone-1.4.0-src.tar.gz
+  OZONE_VERSION: 1.4.0
   # TEMP validate tests with existing image
   OZONE_RUNNER_IMAGE: apache/ozone-runner # ${{ github.repository }}
   OZONE_RUNNER_VERSION: 20240316-jdk17-1 # ${{ github.run_number }}
@@ -43,20 +42,18 @@ jobs:
     strategy:
       matrix:
         suite:
-          - HA-unsecure # can add more later
+          - HA-secure # can add more later
       fail-fast: false
     steps:
-      - name: Download Ozone sources
+      - name: Download Ozone ${OZONE_VERSION}
         run: |
-          curl -LSs -o ozone-src.tar.gz ${OZONE_SRC_URL}
+          curl -LSs -o ozone-src.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}-src.tar.gz
+          curl -LSs -o ozone.tar.gz https://dlcdn.apache.org/ozone/${OZONE_VERSION}/ozone-${OZONE_VERSION}.tar.gz
           tar -xvz --strip-components 1 -f ozone-src.tar.gz
-      - name: Download Ozone binaries
-        run: |
-          curl -LSs -o ozone.tar.gz ${OZONE_BIN_URL}
           mkdir -p hadoop-ozone/dist/target
-          tar xzvf ozone.tar.gz -C hadoop-ozone/dist/target
-          rm ozone.tar.gz
+          tar -xvz -C hadoop-ozone/dist/target -f ozone.tar.gz
           sudo chmod -R a+rwX hadoop-ozone/dist/target
+          rm -f ozone.tar.gz ozone-src.tar.gz
 #      - name: Download image
 #        uses: actions/download-artifact@v4
 #        with:
