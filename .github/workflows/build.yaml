@@ -38,7 +38,7 @@ jobs:
 #          name: image
 #          path: image.tar
   acceptance:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 #    needs: build
     strategy:
       matrix:
