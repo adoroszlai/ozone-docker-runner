@@ -166,6 +166,7 @@ RUN set -eux ; \
 ENV JAVA_HOME=/usr/local/jdk-17.0.2
 ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV PATH=/opt/hadoop/libexec:$PATH:$JAVA_HOME/bin:/opt/hadoop/bin
+RUN mkdir -p /usr/lib/jvm && ln -s $JAVA_HOME /usr/lib/jvm/jre # compatibility with Ozone 1.4.0 and earlier compose env.
 
 RUN groupadd --gid 1000 hadoop
 RUN useradd --uid 1000 hadoop --gid 1000 --home /opt/hadoop
