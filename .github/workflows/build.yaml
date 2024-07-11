@@ -43,7 +43,7 @@ jobs:
     strategy:
       matrix:
         suite:
-          - HA-secure # can add more later
+          - HA-unsecure # can add more later
       fail-fast: false
     steps:
       - name: Download Ozone sources
