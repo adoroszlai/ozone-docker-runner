@@ -57,7 +57,9 @@ jobs:
     strategy:
       matrix:
         suite:
-          - compat
+          - EC
+          - HA-secure
+          - MR
           - secure
       fail-fast: false
     steps:
@@ -82,11 +84,14 @@ jobs:
       - name: List images
         run: |
           docker image ls
-      - name: Execute tests
+      - name: Hacks
         run: |
           pushd hadoop-ozone/dist/target/ozone-*
           sudo mkdir .aws && sudo chmod 777 .aws && sudo chown 1000 .aws
+          sed -i -e 's@apache/ozone-runner@${OZONE_RUNNER_IMAGE}@g' compose/ozonesecure/docker-compose.yaml compose/ozonesecure-ha/docker-compose.yaml # HDDS-11101
           popd
+      - name: Execute tests
+        run: |
           ./hadoop-ozone/dev-support/checks/acceptance.sh
         env:
           OZONE_ACCEPTANCE_SUITE: ${{ matrix.suite }}
