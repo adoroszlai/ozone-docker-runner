@@ -52,7 +52,7 @@ jobs:
         run: |
           src=${{ needs.build.outputs.image-id }}
           docker pull "$src"
-          for tag in "$DOCKER_METADATA_OUTPUT_TAGS"; do
+          for tag in $DOCKER_METADATA_OUTPUT_TAGS; do
             docker tag "$src" "$tag"
             docker push "$tag"
           done
