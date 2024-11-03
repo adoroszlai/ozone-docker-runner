@@ -66,15 +66,15 @@ jobs:
           echo "success=$success" >> $GITHUB_OUTPUT
           echo "image-id=$IMAGE_ID" >> $GITHUB_OUTPUT
 
-      - name: Login to $REGISTRY
+      - name: Login to ${{ env.REGISTRY }}
         if: ${{ github.event_name != 'pull_request' && steps.pull.outputs.success == 'false' }}
         uses: docker/login-action@v3
         with:
-          registry: $REGISTRY
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }} # update this if changing REGISTRY
 
-      - name: Build and push image to $REGISTRY
+      - name: Build and push image to ${{ env.REGISTRY }}
         if: ${{ steps.pull.outputs.success == 'false' }}
         uses: docker/build-push-action@v6
         with:
