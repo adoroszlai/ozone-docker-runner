@@ -28,6 +28,10 @@ env:
   # if changed, also update in `build.yaml`
   DEFAULT_REGISTRY: ghcr.io
 
+concurrency:
+  group: ${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
