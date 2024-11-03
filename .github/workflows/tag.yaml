@@ -50,5 +50,5 @@ jobs:
 
       - name: Apply tags to existing image
         run: |
-          opts="--tag $(echo "$DOCKER_METADATA_OUTPUT_TAGS" | sed 's/,/ --tag /g')"
+          opts="$(echo "$DOCKER_METADATA_OUTPUT_TAGS" | sed 's/^/--tag /g' | xargs echo)"
           docker buildx imagetools create $opts "${{ needs.build.outputs.image-id }}"
