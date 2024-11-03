@@ -32,8 +32,10 @@ permissions:
   packages: write
 
 env:
-  # if changed, login password needs to be updated, too
-  REGISTRY: ghcr.io
+  # if changed, update:
+  # - same in `tag.yaml`
+  # - login password
+  DEFAULT_REGISTRY: ghcr.io
 
 jobs:
   build:
@@ -56,7 +58,7 @@ jobs:
       - name: Check if image exists
         id: pull
         run: |
-          IMAGE_ID="$REGISTRY/$DOCKER_METADATA_OUTPUT_TAGS"
+          IMAGE_ID="$DEFAULT_REGISTRY/$DOCKER_METADATA_OUTPUT_TAGS"
 
           success=false
           if docker pull "$IMAGE_ID"; then
@@ -66,15 +68,15 @@ jobs:
           echo "success=$success" >> $GITHUB_OUTPUT
           echo "image-id=$IMAGE_ID" >> $GITHUB_OUTPUT
 
-      - name: Login to ${{ env.REGISTRY }}
+      - name: Login to ${{ env.DEFAULT_REGISTRY }}
         if: ${{ github.event_name != 'pull_request' && steps.pull.outputs.success == 'false' }}
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.DEFAULT_REGISTRY }}
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }} # update this if changing REGISTRY
+          password: ${{ secrets.GITHUB_TOKEN }} # update this if changing DEFAULT_REGISTRY
 
-      - name: Build and push image to ${{ env.REGISTRY }}
+      - name: Build and push image to ${{ env.DEFAULT_REGISTRY }}
         if: ${{ steps.pull.outputs.success == 'false' }}
         uses: docker/build-push-action@v6
         with:

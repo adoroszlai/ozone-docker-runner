@@ -24,6 +24,10 @@ permissions:
   contents: read
   packages: write
 
+env:
+  # if changed, also update in `build.yaml`
+  DEFAULT_REGISTRY: ghcr.io
+
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
@@ -50,5 +54,6 @@ jobs:
 
       - name: Apply tags to existing image
         run: |
+          set -x
           opts="$(echo "$DOCKER_METADATA_OUTPUT_TAGS" | sed 's/^/--tag /g' | xargs echo)"
-          docker buildx imagetools create $opts "${{ needs.build.outputs.image-id }}"
+          docker buildx imagetools create $opts "$DEFAULT_REGISTRY/${{ needs.build.outputs.image-id }}"
