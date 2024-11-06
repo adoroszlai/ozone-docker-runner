@@ -43,7 +43,9 @@ jobs:
           images: |
             ${{ github.repository_owner }}/ozone-runner
           tags: |
-            type=ref,event=tag,latest=false
+            type=ref,event=tag
+          flavor: |
+            latest=false
 
       - name: Add Docker Hub to targets
         if: ${{ env.DOCKERHUB_USER }}
