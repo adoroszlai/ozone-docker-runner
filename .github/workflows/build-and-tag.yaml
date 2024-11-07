@@ -25,15 +25,10 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
-
   tag:
-    needs: build
-    if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     env:
-      IMAGE_ID: ${{ needs.build.outputs.image-id }}
+      IMAGE_ID: ghcr.io/adoroszlai/ozone-runner:204c4322b0412c30c416ed55869d1b04965859e8
     steps:
       - name: Generate tags
         uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
@@ -41,7 +36,7 @@ jobs:
           images: |
             ghcr.io/${{ github.repository_owner }}/ozone-runner
           tags: |
-            type=ref,event=tag
+            type=ref,event=branch
           flavor: |
             latest=false
 
@@ -58,7 +53,6 @@ jobs:
 
       - name: Apply tags to existing image
         run: |
-          for tag in $DOCKER_METADATA_OUTPUT_TAGS; do
-            docker buildx imagetools create -t "$IMAGE_ID" "$tag"
-            docker push "$tag"
-          done
+          set -x
+          opts="$(echo "$DOCKER_METADATA_OUTPUT_TAGS" | sed 's/^/--tag /g' | xargs echo)"
+          docker buildx imagetools create $opts "$IMAGE_ID"
