@@ -23,6 +23,7 @@ RUN set -eux ; \
       krb5-workstation \
       libxcrypt-compat \
       ncurses \
+      nmap-ncat \
       python3 \
       openssl \
       procps \
