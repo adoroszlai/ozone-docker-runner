@@ -19,7 +19,8 @@ RUN go install github.com/rexray/gocsi/csc@latest
 
 FROM rockylinux:9.3
 RUN set -eux ; \
-    dnf install -y \
+    dnf upgrade -y \
+    && dnf install -y \
       bzip2 \
       diffutils \
       findutils \
