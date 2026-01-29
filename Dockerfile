@@ -118,8 +118,10 @@ RUN set -eux ; \
         aarch64) url='https://github.com/jvm-profiling-tools/async-profiler/releases/download/v2.9/async-profiler-2.9-linux-arm64.tar.gz' ;; \
         *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
     esac; \
-    curl -L ${url} | tar xvz ; \
-    mv async-profiler-* /opt/profiler
+    curl -L -o async-profiler.tar.gz ${url}; \
+    mkdir /opt/profiler; \
+    tar zxf async-profiler.tar.gz -C /opt/profiler --strip-components 1; \
+    rm -f async-profiler.tar.gz
 
 # Hadoop native libary
 RUN set -eux ; \
