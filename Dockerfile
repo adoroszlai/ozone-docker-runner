@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rockylinux/rockylinux:9
+FROM rockylinux/rockylinux:10
 RUN set -eux ; \
     dnf upgrade -y \
     && dnf install -y \
