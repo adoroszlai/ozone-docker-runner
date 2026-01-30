@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rockylinux:9.3
+FROM rockylinux/rockylinux:9
 RUN set -eux ; \
     dnf install -y \
       bzip2 \
