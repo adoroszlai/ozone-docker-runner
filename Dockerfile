@@ -85,6 +85,9 @@ RUN id=1000; \
       id=$(( id + 1 )); \
     done
 
+RUN ls -la /etc/shadow
+RUN chmod 0400 /etc/shadow
+RUN ls -la /etc/shadow
 RUN echo "hadoop ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN chown hadoop /opt
 
@@ -103,5 +106,7 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 WORKDIR /opt/hadoop
 USER hadoop
+
+RUN sudo whoami
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "entrypoint.sh"]
