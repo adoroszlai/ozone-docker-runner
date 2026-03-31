@@ -33,13 +33,14 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       image-id: ${{ steps.meta.outputs.tags }}
+    permissions:
+      packages: write
     steps:
       - name: Generate image ID
         id: meta
